@@ -271,8 +271,8 @@ def crop_mult(data,mult=16,HWmax=[800,1200]):
     H,W = data.shape[2:]
     Hnew = int(min(H/mult*mult,HWmax[0]))
     Wnew = int(min(W/mult*mult,HWmax[1]))
-    h = (H-Hnew)/2
-    w = (W-Wnew)/2
+    h = (H-Hnew)//2
+    w = (W-Wnew)//2
 
     return data[:,:,h:h+Hnew,w:w+Wnew]
 
