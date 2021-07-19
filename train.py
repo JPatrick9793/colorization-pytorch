@@ -12,23 +12,30 @@ from util import util
 if __name__ == '__main__':
     opt = TrainOptions().parse()
 
-    opt.dataroot = './dataset/ilsvrc2012/%s/' % opt.phase
+    opt.dataroot = opt.dataroot if opt.dataroot is not None else './dataset/ilsvrc2012/%s/' % opt.phase
+    # opt.dataroot = opt.dataroot if opt.dataroot is not None else '/home/john/dev/colorful-colorization/data/ILSVRC2012_img_val/val'
+
     dataset = torchvision.datasets.ImageFolder(opt.dataroot,
                                                transform=transforms.Compose([
-                                                   transforms.RandomChoice([transforms.Resize(opt.loadSize, interpolation=1),
-                                                                            transforms.Resize(opt.loadSize, interpolation=2),
-                                                                            transforms.Resize(opt.loadSize, interpolation=3),
-                                                                            transforms.Resize((opt.loadSize, opt.loadSize), interpolation=1),
-                                                                            transforms.Resize((opt.loadSize, opt.loadSize), interpolation=2),
-                                                                            transforms.Resize((opt.loadSize, opt.loadSize), interpolation=3)]),
-                                                   transforms.RandomChoice([transforms.RandomResizedCrop(opt.fineSize, interpolation=1),
-                                                                            transforms.RandomResizedCrop(opt.fineSize, interpolation=2),
-                                                                            transforms.RandomResizedCrop(opt.fineSize, interpolation=3)]),
+                                                   transforms.RandomChoice([
+                                                       transforms.Resize(opt.loadSize, interpolation=1),
+                                                       transforms.Resize(opt.loadSize, interpolation=2),
+                                                       transforms.Resize(opt.loadSize, interpolation=3),
+                                                       transforms.Resize((opt.loadSize, opt.loadSize), interpolation=1),
+                                                       transforms.Resize((opt.loadSize, opt.loadSize), interpolation=2),
+                                                       transforms.Resize((opt.loadSize, opt.loadSize), interpolation=3)
+                                                   ]),
+                                                   transforms.RandomChoice([
+                                                       transforms.RandomResizedCrop(opt.fineSize, interpolation=1),
+                                                       transforms.RandomResizedCrop(opt.fineSize, interpolation=2),
+                                                       transforms.RandomResizedCrop(opt.fineSize, interpolation=3)
+                                                   ]),
                                                    transforms.RandomHorizontalFlip(),
                                                    transforms.ToTensor()]))
-    dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=opt.batch_size, shuffle=True, num_workers=int(opt.num_threads))
+    dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=opt.batch_size, shuffle=True,
+                                                 num_workers=int(opt.num_threads))
 
-    dataset_size = len(dataset)
+    dataset_size = min(len(dataset), opt.max_dataset_size)
     print('#training images = %d' % dataset_size)
 
     model = create_model(opt)
@@ -78,6 +85,10 @@ if __name__ == '__main__':
                 model.save_networks('latest')
 
             iter_data_time = time.time()
+
+            # Break inner loop if theres enough data
+            if ((i+1)*opt.batch_size) >= opt.max_dataset_size:
+                break
 
         if epoch % opt.save_epoch_freq == 0:
             print('saving the model at the end of epoch %d, iters %d' %
