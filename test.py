@@ -25,7 +25,8 @@ if __name__ == '__main__':
     opt.batch_size = 1  # test code only supports batch_size = 1
     opt.display_id = -1  # no visdom display
     opt.phase = 'val'
-    opt.dataroot = './dataset/ilsvrc2012/%s/' % opt.phase
+    opt.dataroot = opt.dataroot if opt.dataroot is not None else './dataset/ilsvrc2012/%s/' % opt.phase
+#     opt.dataroot = '/home/john/dev/colorful-colorization/data/ILSVRC2012_img_val/val'  # './dataset/ilsvrc2012/%s/' % opt.phase
     opt.serial_batches = True
     opt.aspect_ratio = 1.
 
@@ -53,7 +54,8 @@ if __name__ == '__main__':
 
         # with no points
         for (pp, sample_p) in enumerate(sample_ps):
-            img_path = [string.replace('%08d_%.3f' % (i, sample_p), '.', 'p')]
+            # img_path = [string.replace('%08d_%.3f' % (i, sample_p), '.', 'p')]
+            img_path = [('%08d_%.3f' % (i, sample_p)).replace('.', 'p')]
             data = util.get_colorization_data(data_raw, opt, ab_thresh=0., p=sample_p)
 
             model.set_input(data)
