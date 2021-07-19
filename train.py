@@ -1,4 +1,7 @@
 import time
+
+from tqdm import tqdm
+
 from options.train_options import TrainOptions
 from models import create_model
 from util.visualizer import Visualizer
@@ -51,7 +54,8 @@ if __name__ == '__main__':
         epoch_iter = 0
 
         # for i, data in enumerate(dataset):
-        for i, data_raw in enumerate(dataset_loader):
+        for i, data_raw in tqdm(enumerate(dataset_loader), total=dataset_size//opt.batch_size):
+
             data_raw[0] = data_raw[0].cuda()
             data = util.get_colorization_data(data_raw, opt, p=opt.sample_p)
             if(data is None):
