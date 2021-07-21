@@ -1,5 +1,8 @@
 
 import os
+import pickle
+import sys
+
 from options.train_options import TrainOptions
 from models import create_model
 from util.visualizer import save_images
@@ -26,9 +29,15 @@ if __name__ == '__main__':
     opt.display_id = -1  # no visdom display
     opt.phase = 'val'
     opt.dataroot = opt.dataroot if opt.dataroot is not None else './dataset/ilsvrc2012/%s/' % opt.phase
-#     opt.dataroot = '/home/john/dev/colorful-colorization/data/ILSVRC2012_img_val/val'  # './dataset/ilsvrc2012/%s/' % opt.phase
+    # opt.dataroot = '/home/john/dev/colorful-colorization/data/ILSVRC2012_img_val/val'  # './dataset/ilsvrc2012/%s/' % opt.phase
     opt.serial_batches = True
     opt.aspect_ratio = 1.
+
+    if opt.pickle_opt is not None:
+        print(f"Dumping {type(opt)} to {opt.pickle_opt}")
+        with open(opt.pickle_opt, 'wb') as f:
+            pickle.dump(opt, f)
+        sys.exit(0)
 
     dataset = torchvision.datasets.ImageFolder(opt.dataroot,
                                                transform=transforms.Compose([
