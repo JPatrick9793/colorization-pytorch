@@ -120,12 +120,12 @@ class Pix2PixModel(BaseModel):
     def forward(self):
         (self.fake_B_class, self.fake_B_reg) = self.netG(self.real_A, self.hint_B, self.mask_B)
         # if(self.opt.classification):
-        self.fake_B_dec_max = self.netG.module.upsample4(util.decode_max_ab(self.fake_B_class, self.opt))
-        self.fake_B_distr = self.netG.module.softmax(self.fake_B_class)
+        self.fake_B_dec_max = self.netG.upsample4(util.decode_max_ab(self.fake_B_class, self.opt))
+        self.fake_B_distr = self.netG.softmax(self.fake_B_class)
 
-        self.fake_B_dec_mean = self.netG.module.upsample4(util.decode_mean(self.fake_B_distr, self.opt))
+        self.fake_B_dec_mean = self.netG.upsample4(util.decode_mean(self.fake_B_distr, self.opt))
 
-        self.fake_B_entr = self.netG.module.upsample4(-torch.sum(self.fake_B_distr * torch.log(self.fake_B_distr + 1.e-10), dim=1, keepdim=True))
+        self.fake_B_entr = self.netG.upsample4(-torch.sum(self.fake_B_distr * torch.log(self.fake_B_distr + 1.e-10), dim=1, keepdim=True))
         # embed()
 
     def backward_D(self):
