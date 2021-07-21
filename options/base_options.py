@@ -63,7 +63,18 @@ class BaseOptions():
         parser.add_argument('--which_epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
         parser.add_argument('--how_many', type=int, default=200, help='how many test images to run')
         parser.add_argument('--aspect_ratio', type=float, default=1.0, help='aspect ratio of result images')
-        parser.add_argument('--dataroot', type=str, default=None, help='Path to data folder')
+
+        parser.add_argument('--dataroot', type=str, default=None, help='Path to data folder.')
+        parser.add_argument('--dataroot_validation', type=str, default=None, help='Path to validation data folder.')
+        parser.add_argument('--max_dataset_size_validation', type=float, default=float("inf"),
+                            help='Maximum number of samples allowed per validation run dataset. '
+                                 'If the dataset directory contains more than max_dataset_size, '
+                                 'only a subset is loaded.')
+
+        parser.add_argument('--pickle_opt', type=str, default=None,
+                            help='Pickle the opt variable and exit the program immediately. '
+                                 'Useful for creating opt objects for inference/testing. '
+                                 'This value will be the name of the file to write out the object to.')
 
         parser.add_argument('--load_model', action='store_true', help='load the latest model')
         parser.add_argument('--half', action='store_true', help='half precision model')
