@@ -148,28 +148,28 @@ class Pix2PixModel(BaseModel):
         self.loss_D.backward()
 
     def compute_losses_G(self):
-        mask_avg = torch.mean(self.mask_B_nc.type(torch.cuda.FloatTensor)) + .000001
+        mask_avg = torch.mean(self.mask_B_nc.type(torch.FloatTensor).to(self.device)) + .000001
 
         self.loss_0 = 0  # 0 for plot
 
         # classification statistics
-        self.loss_G_CE = self.criterionCE(self.fake_B_class.type(torch.cuda.FloatTensor),
-                                          self.real_B_enc[:, 0, :, :].type(torch.cuda.LongTensor))  # cross-entropy loss
-        self.loss_G_entr = torch.mean(self.fake_B_entr.type(torch.cuda.FloatTensor))  # entropy of predicted distribution
-        self.loss_G_entr_hint = torch.mean(self.fake_B_entr.type(torch.cuda.FloatTensor) * self.mask_B_nc.type(torch.cuda.FloatTensor)) / mask_avg  # entropy of predicted distribution at hint points
+        self.loss_G_CE = self.criterionCE(self.fake_B_class.type(torch.FloatTensor).to(self.device),
+                                          self.real_B_enc[:, 0, :, :].type(torch.LongTensor).to(self.device))  # cross-entropy loss
+        self.loss_G_entr = torch.mean(self.fake_B_entr.type(torch.FloatTensor).to(self.device))  # entropy of predicted distribution
+        self.loss_G_entr_hint = torch.mean(self.fake_B_entr.type(torch.FloatTensor).to(self.device) * self.mask_B_nc.type(torch.FloatTensor).to(self.device)) / mask_avg  # entropy of predicted distribution at hint points
 
         # regression statistics
-        self.loss_G_L1_max = 10 * torch.mean(self.criterionL1(self.fake_B_dec_max.type(torch.cuda.FloatTensor),
-                                                              self.real_B.type(torch.cuda.FloatTensor)))
-        self.loss_G_L1_mean = 10 * torch.mean(self.criterionL1(self.fake_B_dec_mean.type(torch.cuda.FloatTensor),
-                                                               self.real_B.type(torch.cuda.FloatTensor)))
-        self.loss_G_L1_reg = 10 * torch.mean(self.criterionL1(self.fake_B_reg.type(torch.cuda.FloatTensor),
-                                                              self.real_B.type(torch.cuda.FloatTensor)))
+        self.loss_G_L1_max = 10 * torch.mean(self.criterionL1(self.fake_B_dec_max.type(torch.FloatTensor).to(self.device),
+                                                              self.real_B.type(torch.FloatTensor).to(self.device)))
+        self.loss_G_L1_mean = 10 * torch.mean(self.criterionL1(self.fake_B_dec_mean.type(torch.FloatTensor).to(self.device),
+                                                               self.real_B.type(torch.FloatTensor).to(self.device)))
+        self.loss_G_L1_reg = 10 * torch.mean(self.criterionL1(self.fake_B_reg.type(torch.FloatTensor).to(self.device),
+                                                              self.real_B.type(torch.FloatTensor).to(self.device)))
 
         # L1 loss at given points
-        self.loss_G_fake_real = 10 * torch.mean(self.criterionL1(self.fake_B_reg * self.mask_B_nc, self.real_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
-        self.loss_G_fake_hint = 10 * torch.mean(self.criterionL1(self.fake_B_reg * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
-        self.loss_G_real_hint = 10 * torch.mean(self.criterionL1(self.real_B * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
+        self.loss_G_fake_real = 10 * torch.mean(self.criterionL1(self.fake_B_reg * self.mask_B_nc, self.real_B * self.mask_B_nc).type(torch.FloatTensor).to(self.device)) / mask_avg
+        self.loss_G_fake_hint = 10 * torch.mean(self.criterionL1(self.fake_B_reg * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.FloatTensor).to(self.device)) / mask_avg
+        self.loss_G_real_hint = 10 * torch.mean(self.criterionL1(self.real_B * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.FloatTensor).to(self.device)) / mask_avg
 
         # self.loss_G_L1 = torch.mean(self.criterionL1(self.fake_B, self.real_B))
         # self.loss_G_Huber = torch.mean(self.criterionHuber(self.fake_B, self.real_B))
@@ -210,23 +210,23 @@ class Pix2PixModel(BaseModel):
         from collections import OrderedDict
         visual_ret = OrderedDict()
 
-        visual_ret['gray'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), torch.zeros_like(self.real_B).type(torch.cuda.FloatTensor)), dim=1), self.opt)
-        visual_ret['real'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), self.real_B.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['gray'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), torch.zeros_like(self.real_B).type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
+        visual_ret['real'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), self.real_B.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
-        visual_ret['fake_max'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), self.fake_B_dec_max.type(torch.cuda.FloatTensor)), dim=1), self.opt)
-        visual_ret['fake_mean'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), self.fake_B_dec_mean.type(torch.cuda.FloatTensor)), dim=1), self.opt)
-        visual_ret['fake_reg'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), self.fake_B_reg.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['fake_max'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), self.fake_B_dec_max.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
+        visual_ret['fake_mean'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), self.fake_B_dec_mean.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
+        visual_ret['fake_reg'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), self.fake_B_reg.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
-        visual_ret['hint'] = util.lab2rgb(torch.cat((self.real_A.type(torch.cuda.FloatTensor), self.hint_B.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['hint'] = util.lab2rgb(torch.cat((self.real_A.type(torch.FloatTensor).to(self.device), self.hint_B.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
-        visual_ret['real_ab'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.cuda.FloatTensor)), self.real_B.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['real_ab'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.FloatTensor).to(self.device)), self.real_B.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
-        visual_ret['fake_ab_max'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.cuda.FloatTensor)), self.fake_B_dec_max.type(torch.cuda.FloatTensor)), dim=1), self.opt)
-        visual_ret['fake_ab_mean'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.cuda.FloatTensor)), self.fake_B_dec_mean.type(torch.cuda.FloatTensor)), dim=1), self.opt)
-        visual_ret['fake_ab_reg'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.cuda.FloatTensor)), self.fake_B_reg.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['fake_ab_max'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.FloatTensor).to(self.device)), self.fake_B_dec_max.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
+        visual_ret['fake_ab_mean'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.FloatTensor).to(self.device)), self.fake_B_dec_mean.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
+        visual_ret['fake_ab_reg'] = util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.FloatTensor).to(self.device)), self.fake_B_reg.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
-        visual_ret['mask'] = self.mask_B_nc.expand(-1, 3, -1, -1).type(torch.cuda.FloatTensor)
-        visual_ret['hint_ab'] = visual_ret['mask'] * util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.cuda.FloatTensor)), self.hint_B.type(torch.cuda.FloatTensor)), dim=1), self.opt)
+        visual_ret['mask'] = self.mask_B_nc.expand(-1, 3, -1, -1).type(torch.FloatTensor).to(self.device)
+        visual_ret['hint_ab'] = visual_ret['mask'] * util.lab2rgb(torch.cat((torch.zeros_like(self.real_A.type(torch.FloatTensor).to(self.device)), self.hint_B.type(torch.FloatTensor).to(self.device)), dim=1), self.opt)
 
         C = self.fake_B_distr.shape[1]
         # scale to [-1, 2], then clamped to [-1, 1]
