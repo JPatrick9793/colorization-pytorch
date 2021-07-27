@@ -66,6 +66,7 @@ class BaseOptions():
 
         parser.add_argument('--dataroot', type=str, default=None, help='Path to data folder.')
         parser.add_argument('--dataroot_validation', type=str, default=None, help='Path to validation data folder.')
+        parser.add_argument('--linear_checkpoints', type=str, default=None, help='Path to data folder.')
         parser.add_argument('--max_dataset_size_validation', type=float, default=float("inf"),
                             help='Maximum number of samples allowed per validation run dataset. '
                                  'If the dataset directory contains more than max_dataset_size, '
@@ -147,6 +148,7 @@ class BaseOptions():
             if id >= 0:
                 opt.gpu_ids.append(id)
         if len(opt.gpu_ids) > 0:
+            available = torch.cuda.is_available()
             torch.cuda.set_device(opt.gpu_ids[0])
         opt.A = 2 * opt.ab_max / opt.ab_quant + 1
         opt.B = opt.A
