@@ -324,7 +324,7 @@ def decode_mean(data_ab_quant, opt):
     #   data_ab_inf     Nx2xHxW \in [-1,1]
 
     (N,Q,H,W) = data_ab_quant.shape
-    a_range = torch.range(-opt.ab_max, opt.ab_max, step=opt.ab_quant).to(data_ab_quant.device)[None,:,None,None]
+    a_range = torch.arange(-opt.ab_max, opt.ab_max+1, step=opt.ab_quant).to(data_ab_quant.device)[None,:,None,None]
     a_range = a_range.type(data_ab_quant.type())
 
     # reshape to AB space
