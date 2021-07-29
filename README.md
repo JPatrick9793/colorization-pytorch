@@ -1,7 +1,6 @@
 # CS7643 DEEP LEARNING PROJECT (GROUP 170) - COLORIZING BLACK AND WHITE IMAGES
 
 ## Description
-***
 
 This repository is a fork of [Colorful Image Colorization](https://github.com/richzhang/colorization) [[1]](#1). 
 The original README before the fork has been renamed to: `README_ORIGINAL.md`. 
@@ -23,7 +22,6 @@ with the goal of conducting intrinsic evaluation on colorization performance:
 object detection, but also image segmentation and several other features.
 
 ## Dataset
-***
 
 For the ImageNet dataset, due to time and computational constraints, we reduced the full-sized training set down
 from 1000 classes and over 2 million images, to 100 classes and 130k images.
@@ -44,7 +42,6 @@ If training the **linear classifiers**, the validation data must be further nest
 (e.g., `/PATH_TO_DIRECTORY/<val>/<class>/SOMEIMAGE.JPEG`).
 
 ## How to install
-***
 
 We use the same environment as in the original repository, so install using `pip install -r requirements.txt`. 
 A summary of the packages is below:
@@ -59,7 +56,7 @@ pip install tensorboard
 You can also run this using the Colab-pro: GPU, high-memory platform.
 
 ## Instructions
-***
+
 ### Checkpoints
 Code from the original repository has been modified slightly to account for bug-fixes as well as additional features.
 To download the original pretrained caffe model, follow the instructions in the original README and run 
