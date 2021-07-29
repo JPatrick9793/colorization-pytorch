@@ -1,85 +1,165 @@
-# Interactive Deep Colorization in PyTorch
-[Project Page](https://richzhang.github.io/ideepcolor/) |  [Paper](https://arxiv.org/abs/1705.02999) | [Video](https://youtu.be/eL5ilZgM89Q) | [Talk](https://www.youtube.com/watch?v=rp5LUSbdsys) | [UI code](https://github.com/junyanz/interactive-deep-colorization/)
+# CS7643 DEEP LEARNING PROJECT (GROUP 170) - COLORIZING BLACK AND WHITE IMAGES
 
-<img src='imgs/demo.gif' width=600>  
+## Description
+***
 
-Real-Time User-Guided Image Colorization with Learned Deep Priors.  
-[Richard Zhang](https://richzhang.github.io/)\*, [Jun-Yan Zhu](http://people.csail.mit.edu/junyanz/)\*, [Phillip Isola](http://people.eecs.berkeley.edu/~isola/), [Xinyang Geng](http://young-geng.xyz/), Angela S. Lin, Tianhe Yu, and [Alexei A. Efros](https://people.eecs.berkeley.edu/~efros/).  
-In ACM Transactions on Graphics (SIGGRAPH 2017).  
+This repository is a fork of [Colorful Image Colorization](https://github.com/richzhang/colorization) [[1]](#1). 
+The original README before the fork has been renamed to: `README_ORIGINAL.md`. 
 
-This is our PyTorch reimplementation for interactive image colorization, written by [Richard Zhang](https://github.com/richzhang) and [Jun-Yan Zhu](https://github.com/junyanz).
+For this project, we retrained the siggraph model using three modifications, 
+with the goal of conducting intrinsic evaluation on colorization performance:
+1. Modification of the Loss function, 
+   to encourage the learner to choose values producing a higher saturation effect: 
+    - Original loss function: `loss_G = loss_G_CE * l + loss_G_L1_reg` 
+      (where: l is an adjustable parameter).
+    - Modified loss function: `loss_G = loss_G_CE * l + loss_G_L1_reg + 1e-4 * S_reg` 
+      (where: S_reg is a penalty term based on average saturation of predicted images).
+2. Train the siggraph model, but using a [stylized](https://github.com/bethgelab/stylize-datasets) version of the ImageNet dataset. 
+    The goal is to evaluate the importance of texture vs. shape bias for re-colorization[[2]](#2). 
+    Also, linear classifiers are trained on the first five layers of each model, 
+    to evaluate the ability to generalize with respect to object detection.
+3. Training the model using the [coco](https://cocodataset.org/#home) dataset, 
+   and evaluating the colorization performance against the original model. coco was created not only for 
+object detection, but also image segmentation and several other features.
 
-This repository contains training usage. The original, official GitHub repo (with an interactive GUI, and originally Caffe backend) is [here](https://richzhang.github.io/ideepcolor/). The official repo has been updated to support PyTorch models on the backend, which can be trained in this repository.
+## Dataset
+***
 
-## Prerequisites
-- Linux or macOS
-- Python 2 or 3
-- CPU or NVIDIA GPU + CUDA CuDNN
+For the ImageNet dataset, due to time and computational constraints, we reduced the full-sized training set down
+from 1000 classes and over 2 million images, to 100 classes and 130k images.
 
-## Getting Started
-### Installation
-- Install PyTorch 0.4+ and torchvision from http://pytorch.org and other dependencies (e.g., [visdom](https://github.com/facebookresearch/visdom) and [dominate](https://github.com/Knio/dominate)). You can install all the dependencies by
-```bash
-pip install -r requirements.txt
+- For ImageNet, download from here [here](https://image-net.org/download.php) (you may need to make an account).
+- For coco dataset, download from [here](https://cocodataset.org/#home).
+- To create a stylized version of ImageNet (or any arbitrary dataset), first download the 
+  [Painter by Numbers](https://www.kaggle.com/c/painter-by-numbers) dataset from kaggle, and then follow the 
+  instructions presented in this [repo](https://github.com/bethgelab/stylize-datasets).
+
+When retraining the **models for re-colorization**, the training set for all datasets should be in the same format
+(e.g., `/PATH_TO_DIRECTORY/<train>/<class>/SOMEIMAGE.JPEG`. The validation data must be in a slightly different
+format: `/PATH_TO_DIRECTORY/<val>/SOMEIMAGE.JPEG`. Datasets must also be in this form when testing re-colorization
+performance as well. If using ImageNet, you can follow the instructions in the original README, and use the
+helper script: `python make_ilsvrc_dataset.py --in_path /PATH/TO/ILSVRC12`
+
+If training the **linear classifiers**, the validation data must be further nested to include class label
+(e.g., `/PATH_TO_DIRECTORY/<val>/<class>/SOMEIMAGE.JPEG`).
+
+## How to install
+***
+
+We use the same environment as in the original repository, so install using `pip install -r requirements.txt`. 
+A summary of the packages is below:
 ```
-- Clone this repo:
-```bash
-git clone https://github.com/richzhang/colorization-pytorch
-cd colorization-pytorch
-```
-
-### Dataset preparation
-- Download the ILSVRC 2012 dataset and run the following script to prepare data
-`python make_ilsvrc_dataset.py --in_path /PATH/TO/ILSVRC12`. This will make symlinks into the training set, and divide the ILSVRC validation set into validation and test splits for colorization.
-
-### Training interactive colorization
-- Train a model: ```bash ./scripts/train_siggraph.sh```. This is a 2 stage training process. First, the network is trained for automatic colorization using classification loss. Results are in `./checkpoints/siggraph_class`. Then, the network is fine-tuned for interactive colorization using regression loss. Final results are in `./checkpoints/siggraph_reg2`.
-
-- To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The following values are monitored:
-    * `G_CE` is a cross-entropy loss between predicted color distribution and ground truth color.
-    * `G_entr` is the entropy of the predicted distribution.
-    * `G_entr_hint` is the entropy of the predicted distribution at points where a color hint is given.
-    * `G_L1_max` is the L1 distance between the ground truth color and argmax of the predicted color distribution.
-    * `G_L1_mean` is the L1 distance between the ground truth color and mean of the predicted color distribution.
-    * `G_L1_reg` is the L1 distance between the ground truth color and the predicted color.
-    * `G_fake_real` is the L1 distance between the predicted color and the ground truth color (in locations where a hint is given).
-    * `G_fake_hint` is the L1 distance between the predicted color and the input hint color (in locations where a hint is given). It's a measure of how much the network "trusts" the input hint.
-    * `G_real_hint` is the L1 distance between the ground truth color and the input hint color (in locations where a hint is given).
-
-
-### Testing interactive colorization
-- Get a model. Either:
-    * (1) download the pretrained model by running ```bash pretrained_models/download_siggraph_model.sh```, which will give you a few models.
-        * Original caffe weights [Recommended] `./checkpoints/siggraph_caffemodel/latest_net_G.pth` is the original caffemodel weights, converted to PyTorch. It is recommended. Be sure to set `--mask_cent 0` when running it.
-        * Retrained model: `./checkpoints/siggraph_retrained/latest_net_G.pth`. The model achieves better PSNR but performs qualitatively differently. Note that this repository is an approximate reimplementation of the siggraph paper.
-    * (2) train your own model (as described in the section above), which will leave a model in `./checkpoints/siggraph_reg2/latest_net_G.pth`
-
-- Test the model on validation data:
-    * ```python test.py --name siggraph_caffemodel --mask_cent 0``` for original caffemodel weights
-    * ```python test.py --name siggraph_retrained ``` for retrained weights.
-    * ```python test.py --name siggraph_reg2 ``` if you retrained your own model
-    The test results will be saved to an HTML file in `./results/[[NAME]]/latest_val/index.html`. For each image in the validation set, it will test (1) automatic colorization, (2) interactive colorization with a few random hints, and (3) interactive colorization with lots of random hints.
-
-- Test the model by making PSNR vs. the number of hints plot: ```python test_sweep.py --name [[NAME]] ```. This plot was used in Figure 6 of the [paper](https://arxiv.org/abs/1705.02999). This test randomly reveals 6x6 color hint patches to the network and sees how accurate the colorization is with respect to the ground truth.
-
-   <img src="./checkpoints/siggraph_pretrained/sweep_reference.png" height="300"/>
-
-- Test the model interactively with the original official [repository](https://github.com/junyanz/interactive-deep-colorization). Follow installation instructions in that repo and run `python ideepcolor.py --backend pytorch --color_model [[PTH/TO/MODEL]] --dist_model [[PTH/TO/MODEL]]`.
-
-
-### Citation
-If you use this code for your research, please cite our paper:
-```
-@article{zhang2017real,
-  title={Real-Time User-Guided Image Colorization with Learned Deep Priors},
-  author={Zhang, Richard and Zhu, Jun-Yan and Isola, Phillip and Geng, Xinyang and Lin, Angela S and Yu, Tianhe and Efros, Alexei A},
-  journal={ACM Transactions on Graphics (TOG)},
-  volume={9},
-  number={4},
-  year={2017},
-  publisher={ACM}
-}
+pip install torch==0.4.1.post2
+pip install torchvision==0.2.1
+pip install scipy==1.1.0
+pip install dominate
+pip install tensorboard
 ```
 
-## Acknowledgments
-This code borrows heavily from the [pytorch-CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) repository.
+You can also run this using the Colab-pro: GPU, high-memory platform.
+
+## Instructions
+***
+### Checkpoints
+Code from the original repository has been modified slightly to account for bug-fixes as well as additional features.
+To download the original pretrained caffe model, follow the instructions in the original README and run 
+`bash pretrained_models/download_siggraph_model.sh`. This will put the model weights under the "checkpoints" folder.
+This folder is also where coco, stylized, and modified checkpoints will be stored. Under this "checkpoints" folder
+are a set of nested folders, each one corresponding to the model they are associated with
+
+### Training the siggraph models (In General)
+
+- All checkpoints from our training runs are located in the gatech dropbox link provided with the project.
+- The Stylized ImageNet training data from our training runs is also located in the gatech dropbox link 
+provided with the project.
+
+Generally, we follow the instructions in the original README and run `bash ./scripts/train_siggraph.sh`; however, 
+you will need to make slight modifications to this script depending on which tests you are running. Training is
+done in 4 phases: The first and seconds phases train the siggraph model on classification loss, however, the 
+first phase only uses a small subset of the overall training data (almost like a test). The third and fourth 
+phases then train the model using regression loss (this is where we inject our "modified" loss logic, if applicable).
+The difference between the third and fourth phase is that the learning rate is decreased on the fourth phase. In 
+other words, it's similar to manually scheduling the learning rate decay by hand.
+
+The original repo uses [visdom](https://github.com/fossasia/visdom) to track the training progress. In order
+to use visdom, you must start the server before starting the training, otherwise the training script will throw
+an error. To start the server, run: `python -m visdom.server`. If you do not wish to run visdom, you must
+add this flag to the training script: `--display_id 0`.
+
+train.py has several flags, many of which are not necessary for replication, but they can be found in 
+`options/base_options.py` and `options/train_options.py`. The main flags used in `./scripts/train_siggraph.sh` are
+as follows:
+- `--name` — This corresponds to the folder name under the "checkpoints" directory. 
+  For example, Phase 4 training will output to a "siggraph_reg2" checkpoints folder. 
+- `--sample_p` — Corresponds to geometric sampling probability of giving the model color hints during training. 
+  Phases 1 and 2 do not utilize hints, so this is set to 1.0. The third and fourth phases set this to 0.125. 
+- `--niter` — This corresponds to how many epochs to run the model for. Each epoch runs through the entire dataset (or
+  under max_dataset_size is reached).
+- `--niter_decay` — This many epochs after "niter" are added to training; 
+  however, the learning rate is linearly decayed to 0 over these epochs.
+- `--classification` — If this flag is set, train the model using "classification" loss, 
+  otherwise default to regression.
+- `--load_model` — If this flag is set, load the model from the `latest_net_G.pth` checkpoint file.
+  Note, before the second, third, and fourth phases of training, the `latest_net_G.pth` file is copied over
+  from the previous phase, so we can continue training.
+- `--phase` — For training, this will always be set to 'train'.
+- `--dataroot` — (optional) This is a modification of the original repo, and allows us to point to any location
+  for the dataset. If not specified, it will default to `./dataset/ilsvrc2012/<phase>`, where 'phase' corresponds
+  to the previous flag.
+- `--checkpoints_dir` — (optional) Another modification to the original repo, this allows us to specify an arbitrary
+  folder to use for checkpoint directory. If not specified, this defaults to `./checkpoints`
+- `--max_dataset_size` — (optional) Another modification to the original repo. If specified, the training epoch will
+  stop after seeing this many images. For example, the value '130000' is set during stylized training to match 
+  the training volume of the other models.
+- `--mask_cent 0` (Optional) Only use this when using the pretrained caffe model.
+- `--gpu_ids` (Optional) Which GPU to use for training. Set to `-1` if using CPU.
+
+### Training siggraph model with modified loss function
+
+TODO - are there any extra files/code/instructions that need to be added for this?
+
+### Training the Linear Classifiers
+
+- All linear classifier checkpoints from our training runs are located in the gatech dropbox 
+  link provided with the project.
+- Linear classifier training and validation metrics data from our runs is also 
+  located in the gatech dropbox link provided with the project.
+
+In order to train the linear classifiers, we have created a helper script: `bash train_linear_classifiers.sh`. 
+This script calls the new `train_linear_classifiers.py` file we have created. The script runs through
+all four different types of models: Pretrained, Modified loss function, stylized imagenet, and coco models. 
+Many of the flags are the same as the original training script, however, there are a few differences:
+- `--name` — This still corresponds to the folder name under the "checkpoints" directory, and determines which
+  siggraph model is being used.
+- `--checkpoints_dir` — (optional) Another modification to the original repo, this allows us to specify an arbitrary
+  folder to use for checkpoint directory. If not specified, this defaults to `./checkpoints`
+- `--linear_checkpoints` — This determines the name/location of where the linear classifier checkpoints are saved.
+- `--gpu_ids` (Optional) Which GPU to use for training. Set to `-1` if using CPU.
+- `--dataroot` — (optional) This is a modification of the original repo, and allows us to point to any location
+  for the dataset. If not specified, it will default to `./dataset/ilsvrc2012/train`.
+- `--dataroot_validation` — (optional) This is a modification of the original repo, 
+  and allows us to point to any location for the validation dataset. 
+  If not specified, it will default to `./dataset/ilsvrc2012/val`.
+- `--max_dataset_size` — (optional) Another modification to the original repo. If specified, the training epoch will
+  stop after seeing this many images. For example, the value '130000' is set during stylized training to match 
+  the training volume of the other models.
+- `--niter` — This corresponds to how many epochs to run the model for. Each epoch runs through the entire dataset 
+  (or under max_dataset_size is reached).
+- `--mask_cent 0` (Optional) Only use this when using the pretrained caffe model.
+
+Instead of visdom, we utilize [tensorboard](https://github.com/tensorflow/tensorboard) for training the 
+linear classifiers. You can choose to start tensorboard either before, during, or after training. 
+In order to compare the performance, we downloaded the validation accuracy metrics through the 
+tensorboard UI. See the `LinearClassifierPlots.ipynb` notebook for an example of how to plot the results from 
+tensorboard CSV downloads.
+
+## References
+<a id="1">[1]</a>
+Zhang, R., Zhu, J. Y., Isola, P., Geng, X., Lin, A. S., Yu, T., & Efros, A. A. (2017). 
+Real-time user-guided image colorization with learned deep priors. 
+arXiv preprint arXiv:1705.02999.
+
+<a id="2"[2]</a>
+Geirhos, Robert, et al. 
+"ImageNet-trained CNNs are biased towards texture; increasing shape bias improves accuracy and robustness." 
+arXiv preprint arXiv:1811.12231 (2018).
