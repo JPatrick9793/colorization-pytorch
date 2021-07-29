@@ -98,14 +98,36 @@ as follows:
 - `--max_dataset_size` — (optional) Another modification to the original repo. If specified, the training epoch will
   stop after seeing this many images. For example, the value '130000' is set during stylized training to match 
   the training volume of the other models.
-- ``
+- `--mask_cent 0` (Optional) Only use this when using the pretrained caffe model.
+- `--gpu_ids` (Optional) Which GPU to use for training. Set to `-1` if using CPU.
 
 ### Training siggraph model with modified loss function
 
-TODO 
+TODO - are there any extra files/code that needs to be added for this?
 
 ### Training the Linear Classifiers
-...
+
+In order to train the linear classifiers, we have created a helper script: `bash train_linear_classifiers.sh`. 
+This script calls the new `train_linear_classifiers.py` file we have created. The script runs through
+all four different types of models: Pretrained, Modified loss function, stylized imagenet, and coco models. 
+Many of the flags are the same as the original training script, however, there are a few differences:
+- `--name` — This still corresponds to the folder name under the "checkpoints" directory, and determines which
+  siggraph model is being used.
+- `--checkpoints_dir` — (optional) Another modification to the original repo, this allows us to specify an arbitrary
+  folder to use for checkpoint directory. If not specified, this defaults to `./checkpoints`
+- `--linear_checkpoints` — This determines the name/location of where the linear classifier checkpoints are saved.
+- `--gpu_ids` (Optional) Which GPU to use for training. Set to `-1` if using CPU.
+- `--dataroot` — (optional) This is a modification of the original repo, and allows us to point to any location
+  for the dataset. If not specified, it will default to `./dataset/ilsvrc2012/train`.
+- `--dataroot_validation` — (optional) This is a modification of the original repo, 
+  and allows us to point to any location for the validation dataset. 
+  If not specified, it will default to `./dataset/ilsvrc2012/val`.
+- `--max_dataset_size` — (optional) Another modification to the original repo. If specified, the training epoch will
+  stop after seeing this many images. For example, the value '130000' is set during stylized training to match 
+  the training volume of the other models.
+- `--niter` — This corresponds to how many epochs to run the model for. Each epoch runs through the entire dataset 
+  (or under max_dataset_size is reached).
+- `--mask_cent 0` (Optional) Only use this when using the pretrained caffe model.
 
 ## References
 <a id="1">[1]</a>
