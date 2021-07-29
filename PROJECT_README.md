@@ -51,6 +51,7 @@ pip install torch==0.4.1.post2
 pip install torchvision==0.2.1
 pip install scipy==1.1.0
 pip install dominate
+pip install tensorboard
 ```
 
 You can also run this using the Colab-pro: GPU, high-memory platform.
@@ -65,6 +66,11 @@ This folder is also where coco, stylized, and modified checkpoints will be store
 are a set of nested folders, each one corresponding to the model they are associated with
 
 ### Training the siggraph models (In General)
+
+- All checkpoints from our training runs are located in the gatech dropbox link provided with the project.
+- The Stylized ImageNet training data from our training runs is also located in the gatech dropbox link 
+provided with the project.
+
 Generally, we follow the instructions in the original README and run `bash ./scripts/train_siggraph.sh`; however, 
 you will need to make slight modifications to this script depending on which tests you are running. Training is
 done in 4 phases: The first and seconds phases train the siggraph model on classification loss, however, the 
@@ -72,6 +78,11 @@ first phase only uses a small subset of the overall training data (almost like a
 phases then train the model using regression loss (this is where we inject our "modified" loss logic, if applicable).
 The difference between the third and fourth phase is that the learning rate is decreased on the fourth phase. In 
 other words, it's similar to manually scheduling the learning rate decay by hand.
+
+The original repo uses [visdom](https://github.com/fossasia/visdom) to track the training progress. In order
+to use visdom, you must start the server before starting the training, otherwise the training script will throw
+an error. To start the server, run: `python -m visdom.server`. If you do not wish to run visdom, you must
+add this flag to the training script: `--display_id 0`.
 
 train.py has several flags, many of which are not necessary for replication, but they can be found in 
 `options/base_options.py` and `options/train_options.py`. The main flags used in `./scripts/train_siggraph.sh` are
@@ -103,9 +114,14 @@ as follows:
 
 ### Training siggraph model with modified loss function
 
-TODO - are there any extra files/code that needs to be added for this?
+TODO - are there any extra files/code/instructions that need to be added for this?
 
 ### Training the Linear Classifiers
+
+- All linear classifier checkpoints from our training runs are located in the gatech dropbox 
+  link provided with the project.
+- Linear classifier training and validation metrics data from our runs is also 
+  located in the gatech dropbox link provided with the project.
 
 In order to train the linear classifiers, we have created a helper script: `bash train_linear_classifiers.sh`. 
 This script calls the new `train_linear_classifiers.py` file we have created. The script runs through
@@ -128,6 +144,12 @@ Many of the flags are the same as the original training script, however, there a
 - `--niter` — This corresponds to how many epochs to run the model for. Each epoch runs through the entire dataset 
   (or under max_dataset_size is reached).
 - `--mask_cent 0` (Optional) Only use this when using the pretrained caffe model.
+
+Instead of visdom, we utilize [tensorboard](https://github.com/tensorflow/tensorboard) for training the 
+linear classifiers. You can choose to start tensorboard either before, during, or after training. 
+In order to compare the performance, we downloaded the validation accuracy metrics through the 
+tensorboard UI. See the `LinearClassifierPlots.ipynb` notebook for an example of how to plot the results from 
+tensorboard CSV downloads.
 
 ## References
 <a id="1">[1]</a>
